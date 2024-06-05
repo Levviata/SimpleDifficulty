@@ -1,7 +1,6 @@
 package com.charles445.simpledifficulty.potion;
 
 import com.charles445.simpledifficulty.api.SDCapabilities;
-import com.charles445.simpledifficulty.api.SDDamageSources;
 import com.charles445.simpledifficulty.api.SDPotions;
 import com.charles445.simpledifficulty.api.temperature.ITemperatureCapability;
 import com.charles445.simpledifficulty.config.ModConfig;
@@ -9,8 +8,12 @@ import com.charles445.simpledifficulty.util.DamageUtil;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
+import static com.charles445.simpledifficulty.handler.TemperatureResistanceGetterHandler.*;
 
 public abstract class PotionThermia extends PotionBase
 {	
@@ -18,6 +21,7 @@ public abstract class PotionThermia extends PotionBase
 	{
 		super(isBadEffect, liquidColor);
 	}
+
 
 	@Override
 	public void performEffect(EntityLivingBase entity, int amplifier)
@@ -29,7 +33,12 @@ public abstract class PotionThermia extends PotionBase
 			if(DamageUtil.isModDangerous(world) && DamageUtil.healthAboveDifficulty(world, player))
 			{
 				ITemperatureCapability capability = SDCapabilities.getTemperatureData(player);
-				float damage = 0.5f + (0.5f * (float)capability.getTemperatureDamageCounter() * (float)ModConfig.server.temperature.temperatureDamageScaling);
+				// Calculate the total armor resistance
+				float totalArmorResist = helmetResist + chestplateResist + leggingsResist + bootsResist;
+				// Calculate the damage reduction based on total armor resistance
+				float damageReduction = 1.0f - totalArmorResist;
+				// Calculate the final damage
+				float damage = (0.5f + (0.5f * (float)capability.getTemperatureDamageCounter() * (float)ModConfig.server.temperature.temperatureDamageScaling)) * damageReduction;
 				attackPlayer(player, damage);
 				capability.addTemperatureDamageCounter(1);
 			}
